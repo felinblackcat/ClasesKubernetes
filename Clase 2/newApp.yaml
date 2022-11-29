@@ -1,0 +1,79 @@
+# namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: new-app
+  labels:
+    name: new-app
+---
+#resource quote
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: quota-new-app
+  namespace: new-app
+spec:
+  hard:
+    pods: 20
+    services.nodeports: 5
+    services.loadbalancers: 5
+    replicationcontrollers: 5
+    resourcequotas: 2
+    secrets: 2
+    configmaps: 2
+    persistentvolumeclaims: 2
+    requests.cpu: "6"
+    requests.memory: 1Gi
+    limits.cpu: "10"
+    limits.memory: 6Gi
+---
+#config map
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: new-app-config
+  namespace: new-app
+data:
+  DJANGO_ALLOWED_HOSTS: "*"
+  DJANGO_LOGLEVEL: "info"
+  DEBUG: "True"
+  DATABASE_NAME: new-app
+  DATABASE_ENGINE: "postgresql_psycopg2"
+  DATABASE_HOST: "sdsadffsad"
+  DATABASE_PORT: "sdfsdsfd"
+  EMAIL_HOST: "sdfsd"
+  EMAIL_PORT: "sadfsd"
+
+---
+# secrets
+#kubectl create secret generic new-app-secret --from-env-file=.env
+---
+# deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: new-app
+  namespace: new-app
+  labels:
+    app: new-app
+spec:
+	replicas: 2
+  selector:
+    matchLabels:
+      app: new-app
+  template:
+    metadata:
+      labels:
+        app: new-app
+    spec:
+      containers:
+        - image: your_dockerhub_username/app_repo_name:latest
+          name: new-app
+          envFrom:
+          - secretRef:
+              name: new-app-secret
+          - configMapRef:
+              name: new-app-config
+          ports:
+            - containerPort: 8000
+              name: gunicorn

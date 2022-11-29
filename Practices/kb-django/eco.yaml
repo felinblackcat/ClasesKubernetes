@@ -1,0 +1,21 @@
+# namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-simpletyzer
+  labels:
+    names: ns-simpletyzer
+---
+# resource quote
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: quota-simpletyzer
+  namespace: ns-simpletyzer
+spec:
+  hard:
+    requests.cpu: "6"
+    requests.memory: 1Gi
+    limits.cpu: "10"
+    limits.memory: 12Gi
+---
