@@ -2,7 +2,8 @@ version: '3'
 services:
   web:
       build: .
-      image: "tacho_test"
+      image: felingato1992/kclases:tacho-test
+      #image: felingato1992/kclases:tacho-test
       container_name: "tacho_test_container"
       volumes:
         - ./app/:/usr/src/app
