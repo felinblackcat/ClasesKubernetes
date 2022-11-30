@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: app-data-local-pv
+  name: app-media-data-local-pv
   namespace: ns-simpletyzer
 spec:
   capacity:
@@ -11,7 +11,30 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage2
   local:
-    path: /home/felingato/clases/ClasesKubernetes/Practices/kb-django/app_data
+    path: /home/felingato/clases/ClasesKubernetes/Practices/kb-django/app_data/media
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - timmygrande
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: app-static-data-local-pv
+  namespace: ns-simpletyzer
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage2
+  local:
+    path: /home/felingato/clases/ClasesKubernetes/Practices/kb-django/app_data/static
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -24,7 +47,20 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: app-data-local-pvc
+  name: app-media-data-local-pvc
+  namespace: ns-simpletyzer
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: local-storage2
+  resources:
+    requests:
+      storage: 5Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: app-static-data-local-pvc
   namespace: ns-simpletyzer
 spec:
   accessModes:
@@ -82,13 +118,16 @@ spec:
                 name: postgres-config
           volumeMounts:
             - mountPath: /usr/src/app/media
-              name: tacho-app
+              name: media-files
             - mountPath: /usr/src/app/static
-              name: tacho-app
+              name: static-files
       volumes:
-        - name: tacho-app
+        - name: media-files
           persistentVolumeClaim:
-            claimName: app-data-local-pvc
+            claimName: app-media-data-local-pvc
+        - name: static-files
+          persistentVolumeClaim:
+            claimName: app-static-data-local-pvc
 ---
 apiVersion: v1
 kind: Service
