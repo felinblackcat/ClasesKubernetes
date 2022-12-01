@@ -1,0 +1,9 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: nginx
+spec:
+  type: ExternalName
+  externalName: app-service.ns-simpletyzer.svc.cluster.local
+  ports:
+  - port: 30008

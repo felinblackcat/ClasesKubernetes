@@ -128,11 +128,14 @@ spec:
         - name: static-files
           persistentVolumeClaim:
             claimName: app-static-data-local-pvc
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: app-service
+  labels:
+    app: app-service
   namespace: ns-simpletyzer
 spec:
   selector:
