@@ -85,6 +85,34 @@ data:
   DB_PORT: '30007'
   LANGUAGE_CODE: es-co
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-app-config
+  namespace: ns-simpletyzer
+data:
+  nginx.conf: |
+    upstream hello_django {
+      server 127.0.0.1:8000;
+    }
+    server {
+        listen 80;
+        location / {
+          proxy_pass http://hello_django;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header Host $host;
+          proxy_redirect off;
+        }
+        location /static/ {
+          autoindex off;
+          alias /usr/share/nginx/html/static/;
+        }
+        location /media/ {
+          autoindex off;
+          alias /usr/share/nginx/html/media/;
+        }
+    }
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -113,6 +141,24 @@ spec:
           imagePullPolicy: "Always"
           ports:
             - containerPort: 8000  # Exposes container port
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          startupProbe:
+            tcpSocket:
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 1
+          
+          
+          
           envFrom:
             - configMapRef:
                 name: postgres-config
@@ -121,6 +167,35 @@ spec:
               name: media-files
             - mountPath: /usr/src/app/static
               name: static-files
+        
+        - name: tacho-app-nginx
+          image: nginx:stable-alpine
+          resources:
+            limits:
+              memory: "500Mi"
+              cpu: "500m"
+            requests:
+              memory: "200Mi"
+              cpu: "400m"
+          ports:
+            - containerPort: 80
+          # envFrom:
+          #  - configMapRef:
+          #      name: nginx-app-config
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html/media/
+              name: media-files
+            - mountPath: /usr/share/nginx/html/static/
+              name: static-files
+              readOnly: true
+            
+            - mountPath: /etc/nginx/conf.d
+              name: nginx-conf
+              readOnly: true
+
+              
+
+
       volumes:
         - name: media-files
           persistentVolumeClaim:
@@ -128,6 +203,9 @@ spec:
         - name: static-files
           persistentVolumeClaim:
             claimName: app-static-data-local-pvc
+        - name: nginx-conf
+          configMap:
+            name: nginx-app-config
 
 ---
 apiVersion: v1
@@ -141,7 +219,7 @@ spec:
   selector:
     app: tacho-app
   ports:
-    - port: 8000
-      targetPort: 8000
-      nodePort: 30008
+    - port: 80
+      targetPort: 80
+      nodePort: 30010
   type: LoadBalancer
